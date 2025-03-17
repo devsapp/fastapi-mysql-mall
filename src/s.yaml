@@ -1,0 +1,85 @@
+edition: 3.0.0
+name: mall-app
+access: {{ access }}
+
+vars: 
+  region: {{ region }}
+  functionName: {{ functionName }}
+  db_name: "{{ db_name }}"
+  db_database: "{{ db_database }}"
+  db_username: "{{ db_username }}"
+  db_password: "{{ db_password }}"
+
+resources:
+  mysql:
+    component: rds
+    props:
+      region: "${vars.region}"
+      name: "${vars.db_name}"
+      engine: "MySQL:8.0"
+      database: "${vars.db_database}"
+      username: "${vars.db_username}"
+      password: "${vars.db_password}"
+      vpcID: auto  
+
+  forrester-mall:
+    component: fc3 
+    props:
+      region: ${vars.region}              
+      functionName: ${vars.functionName}
+      runtime: custom.debian11
+      description: 'forrester mall'
+      instanceConcurrency: 30
+      timeout: 60
+      cpu: 1.5
+      memorySize: 1536
+      diskSize: 512
+      code: ./code
+      logConfig: auto
+      vpcConfig: auto
+      customRuntimeConfig:
+        port: 80
+        command:
+          - uvicorn
+          - app:app
+        args:  
+          - --host 
+          - 0.0.0.0 
+          - --port 
+          - "80"
+      layers:
+        - acs:fc:${vars.region}:1348378242694825:layers/fastapiMallPyLibLayer/versions/1
+      environmentVariables:
+        MYSQL_USER: ${vars.db_username}
+        MYSQL_PASSWORD: ${vars.db_password}
+        MYSQL_HOST: ${resources.mysql.output.host}
+        MYSQL_PORT: "3306"
+        MYSQL_DB: ${vars.db_database}
+        PATH: /var/fc/lang/python3.12/bin:/opt/python/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        PYTHONPATH: /opt/python:/code/python:/code
+
+      instanceLifecycleConfig:
+        initializer:
+          handler: index.init
+          timeout: 300
+  
+      triggers:
+        - triggerName: httpTrigger 
+          triggerType: http 
+          qualifier: LATEST 
+          triggerConfig: 
+            authType: anonymous 
+            disableURLInternet: false 
+            methods: 
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+
+      customDomain: 
+        protocol: "HTTP"  
+        route:  
+          path: "/docs"  
+          qualifier: "LATEST" 
+        domainName  : auto

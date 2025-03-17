@@ -1,0 +1,87 @@
+Edition: 3.0.0
+Type: Project
+Name: fastapi-mall
+Version: dev
+Provider:
+  - 阿里云 # 取值内容参考：https://api.devsapp.cn/v3/common/args.html
+Description: 一键拉起 FastAPI 项目
+
+Tags: #标签详情
+  - 部署函数
+Category: Web 应用 # 取值内容参考：https://api.devsapp.cn/v3/common/args.html
+Service: # 使用的服务
+  云数据库RDS:
+    Authorities: #权限描述
+      - AliyunRDSFullAccess # 所需要的权限
+  函数计算: # 取值内容参考：https://api.devsapp.cn/v3/common/args.html
+    Authorities: #权限描述
+      - AliyunFCFullAccess # 所需要的权限
+  专有网络:
+    Authorities:
+      - AliyunFCServerlessDevsRolePolicy
+  日志服务:
+    Authorities:
+      - AliyunFCServerlessDevsRolePolicy 
+    Description: 收集函数日志
+
+Organization: 阿里云函数计算（FC） # 所属组织
+Effective: Public # 是否公开，取值：Public，Private，Organization
+Parameters:
+  type: object
+  additionalProperties: false # 不允许增加其他属性
+  required: # 必填项
+    - region
+    - functionName
+    - db_name
+    - db_database
+    - db_username
+    - db_password
+  properties:
+    region:
+      title: 地域
+      type: string
+      default: cn-hangzhou
+      description: 创建应用所在的地区
+      enum:
+        - cn-shanghai
+        - cn-hangzhou
+        - cn-beijing
+
+    functionName:
+      title: 函数名称
+      type: string
+      default: fastapi-mall
+      pattern: "^[a-zA-Z_][a-zA-Z0-9-_]{0,127}$"
+      description: FastAPI 函数名称
+
+     # 数据库
+    db_name:
+      title: 数据库实例名称
+      type: string
+      default: "mysql_by_CAP"
+      sensitive: false
+      description: MySQL 实例名称
+
+    db_database:
+      title: 数据库名称
+      type: string
+      default: "cap_fastapi_database"
+      sensitive: false
+      description: MySQL 数据库名称
+
+    db_username:
+      title: 用户名称
+      type: string
+      default: "cap"
+      sensitive: false
+      description: MySQL 数据库用户名
+
+    db_password:
+      title: 密码
+      type: secret
+      sensitive: true
+      default: "AwesomeCAP_2024"
+      description: MySQL 数据库密码
+
+
+    
