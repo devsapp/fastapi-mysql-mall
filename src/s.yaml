@@ -5,7 +5,7 @@ access: {{ access }}
 vars: 
   region: {{ region }}
   functionName: {{ functionName }}
-  db_name: "{{ db_name }}"
+  db_instance_name: "{{ db_instance_name }}"
   db_database: "{{ db_database }}"
   db_username: "{{ db_username }}"
   db_password: "{{ db_password }}"
@@ -15,7 +15,7 @@ resources:
     component: rds
     props:
       region: "${vars.region}"
-      name: "${vars.db_name}"
+      name: "${vars.db_instance_name}"
       engine: "MySQL:8.0"
       database: "${vars.db_database}"
       username: "${vars.db_username}"

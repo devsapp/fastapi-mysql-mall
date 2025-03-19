@@ -1,7 +1,7 @@
 Edition: 3.0.0
 Type: Project
 Name: fastapi-mall
-Version: dev.0.1
+Version: 0.0.1
 Provider:
   - 阿里云 # 取值内容参考：https://api.devsapp.cn/v3/common/args.html
 Description: 一键部署 FastAPI 仓库管理系统
@@ -32,7 +32,7 @@ Parameters:
   required: # 必填项
     - region
     - functionName
-    - db_name
+    - db_instance_name
     - db_database
     - db_username
     - db_password
@@ -55,7 +55,7 @@ Parameters:
       description: FastAPI 函数名称
 
      # 数据库
-    db_name:
+    db_instance_name:
       title: 数据库实例名称
       type: string
       default: "mysql_by_CAP"

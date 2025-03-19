@@ -98,7 +98,37 @@ A：可以选择绑定代码仓库部署，访问绑定的代码仓库地址即�
 
 **Q：怎么修改项目的依赖库?**
 
-A：所有的项目依赖都在  `src/code/requirements.txt` 中
+A：在本案例中，提前注入了一个名为 `fastapiMallPyLibLayer` 的公共层，包含了项目中的所有额外的依赖库，如果想要修改依赖库，可以注入一个新的层。
+
+步骤一：所有的项目依赖都在  `src/code/requirements.txt` 中，可以自行增加或删除项目所需要的依赖
+
+步骤二：`requirements.txt` 中的依赖修改完成之后，重新部署 `fastapi` 函数，在函数的 WebIDE 中，在 `requirements.txt` 的同级目录下创建一个名为 `build-layer.sh` 的脚本，输入以下命令：
+
+```shell
+#!/bin/bash
+pip install -t ./python -r requirements.txt
+zip -ry python.zip python
+s cli fc layer --layer-name ${LAYER_NAME} --code ./python.zip --compatible-runtime python3.12,custom.debian11 --region ${REGION}  -a default
+s cli fc layer acl --layer-name ${LAYER_NAME} --public --region cn-hangzhou -a default
+rm -rf python python.zip
+```
+> 其中，`${LAYER_NAME}` 的为新的层的名称，可自定义取值；`${REGION}`  为项目所在的 region
+
+然后在函数的 WebIDE 中打开 Terminal，执行以下命令：
+```shell
+chmod +x ./build-layer.sh
+./build-layer.sh
+```
+
+执行成功后，在函数计算控制台左侧栏点击「层管理」，即可看到新增的名为 `${LAYER_NAME}`  的层，点击目标层，可以看到层的 ARN
+![](https://img.alicdn.com/imgextra/i2/O1CN01QrIwqp1X2Dlqn9saN_!!6000000002865-0-tps-2381-613.jpg)
+
+步骤三：在函数中注入新添加的层配置
+
+选择函数计算配置页签下面的「层」，通过 ARN 添加一个新的层，填入步骤二中新增层的 ARN，然后点击部署，即可完成新层的注入
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01krEn2q1Wtydn9AaYx_!!6000000002847-0-tps-2538-1171.jpg)
+![](https://img.alicdn.com/imgextra/i1/O1CN01C8RzDH2AIxFxCuoIr_!!6000000008181-0-tps-1672-1036.jpg)
 
 </development>
 

@@ -1,10 +1,4 @@
 shared: #共享变量
-  db_name:
-    title: 数据库实例名称
-    type: string
-    default: "mysql_by_CAP"
-    sensitive: false
-    description: MySQL 实例名称
   db_database:
     title: 数据库名称
     type: string
