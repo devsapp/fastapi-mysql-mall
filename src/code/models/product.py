@@ -3,6 +3,7 @@
 from sqlalchemy import Column, Integer, String, DECIMAL, TIMESTAMP, Enum, text, Index
 from db.database import Base
 from pydantic import BaseModel
+from typing import Optional
 
 
 class Product(Base):
@@ -31,3 +32,22 @@ Index("idx_name", Product.name)  # 按商品名称模糊搜索
 # 修改库存（原子操作）
 class StockUpdate(BaseModel):
     delta: int  # 库存变化量（可正可负）
+    
+# 创建商品
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    category: str
+    stock: int = 0
+    status: str = "active"
+    rating: Optional[float] = None
+    
+# 更新商品基本信息
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    category: Optional[str] = None
+    status: Optional[str] = None
+    rating: Optional[float] = None

@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
-from models.product import Product, StockUpdate
+from models.product import Product, StockUpdate, ProductCreate, ProductUpdate
 from typing import Optional
 from db.database import engine, get_db, Base, SessionLocal
 import time
@@ -69,6 +69,61 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Region"] = os.environ.get("FC_REGION", "unknown")
     return response
 
+# create new product
+@app.post("/products")
+def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+    new_product = Product(**product.dict())
+    db.add(new_product)
+    db.commit()
+    db.refresh(new_product)
+    return new_product
+
+@app.get("/products/search")
+def search_products_by_name(
+    name: str = Query(..., min_length=1),
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    cache_key = f"product_search_{name}_{page}_{size}"
+    result = defaultCache.get(cache_key)
+    if result is not None:
+        print(f"search_products_by_name: Cache hit for {cache_key}")
+        return result
+
+    total = db.query(Product).filter(Product.name.ilike(f"%{name}%")).count()
+    products = db.query(Product).filter(Product.name.ilike(f"%{name}%")).offset((page-1)*size).limit(size).all()
+    
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+    
+    result = {
+        "total": total,
+        "page": page,
+        "size": size,
+        "products": [
+            {
+                "product_id": product.product_id,
+                "name": product.name,
+                "description": product.description,
+                "price": product.price,
+                "category": product.category,
+                "stock": product.stock,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+                "status": product.status,
+                "rating": product.rating,
+            } for product in products
+        ]
+    }
+    
+    defaultCache.set(
+        cache_key,
+        result,
+        ttl=1,
+    )
+    return result
+
 
 # 查询商品（按商品ID, 1-1000）
 @app.get("/products/{product_id}")
@@ -101,34 +156,7 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
     )
     return result
 
-# 查询商品（按分类、 价格升降序）
-@app.get("/products")
-def get_products(
-    name: str,
-    category: Optional[str] = Query(None),
-    price_asc: Optional[bool] = Query(True),
-    db: Session = Depends(get_db),
-):
-    if category:
-        # 如果提供了category，根据category查询数据库
-        products = (
-            db.query(Product)
-            .filter(Product.category == category, Product.name.like(f"%{name}%"))
-            .order_by(Product.price.asc() if price_asc else Product.price.desc())
-            .limit(10)
-            .all()
-        )
-    else:
-        # 如果没有提供category，返回所有产品
-        products = (
-            db.query(Product)
-            .order_by(Product.price.asc() if price_asc else Product.price.desc())
-            .limit(10)
-            .all()
-        )
-
-    return products
-
+# update stock
 @app.patch("/products/{product_id}/stock")
 def update_stock(product_id: int, stock_update: StockUpdate, db: Session = Depends(get_db)):
     # 原子操作更新库存，防止超卖
@@ -190,7 +218,7 @@ def admin_page(
         offset = (page - 1) * size
         products = (
             db.query(Product)
-            .order_by(Product.created_at.desc())
+            .order_by(Product.product_id.asc())
             .offset(offset)
             .limit(size)
             .all()
@@ -209,6 +237,42 @@ def admin_page(
             "search_id": search_id,  # 传递搜索参数到模板
         },
     )
+    
+# update product info
+@app.put("/products/{product_id}")
+def update_product(product_id: int, product: ProductUpdate, db: Session = Depends(get_db)):
+    db_product = db.query(Product).filter(Product.product_id == product_id).first()
+    if not db_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    update_data = product.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_product, key, value)
+    
+    db.commit()
+    db.refresh(db_product)
+
+    # 清除缓存
+    cache_key = f"product_{product_id}"
+    defaultCache.delete(cache_key)
+
+    return db_product
+
+# delete
+@app.delete("/products/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.product_id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    db.delete(product)
+    db.commit()
+
+    # 清除缓存
+    cache_key = f"product_{product_id}"
+    defaultCache.delete(cache_key)
+
+    return {"message": f"Product {product_id} has been deleted"}
 
 @app.post("/initialize", include_in_schema=False)
 def initialize(db: Session = Depends(get_db)):
