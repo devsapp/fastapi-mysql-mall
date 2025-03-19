@@ -22,7 +22,7 @@ resources:
       password: "${vars.db_password}"
       vpcID: auto  
 
-  forrester-mall:
+  fastapi:
     component: fc3 
     props:
       region: ${vars.region}              

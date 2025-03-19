@@ -1,0 +1,25 @@
+shared: #共享变量
+  db_name:
+    title: 数据库实例名称
+    type: string
+    default: "mysql_by_CAP"
+    sensitive: false
+    description: MySQL 实例名称
+  db_database:
+    title: 数据库名称
+    type: string
+    default: "cap_fastapi_database"
+    sensitive: false
+    description: MySQL 数据库名称
+  db_username:
+    title: 用户名称
+    type: string
+    default: "cap"
+    sensitive: false
+    description: MySQL 数据库用户名
+  db_password:
+    title: 密码
+    type: secret
+    sensitive: true
+    default: "AwesomeCAP_2024"
+    description: MySQL 数据库密码
