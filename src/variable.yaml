@@ -3,6 +3,7 @@ shared: #共享变量
     title: 数据库名称
     type: string
     default: "cap_fastapi_database"
+    pattern: "^[a-z](?:[a-z0-9-]|_(?=.*[a-z0-9]))*[a-z0-9]$"  #由小写字母、数字、下划线（_）、中划线（-）组成，以小写字母开头，小写字母或数字结尾，最多64个字符。
     sensitive: false
     description: MySQL 数据库名称
   db_username:
@@ -10,10 +11,12 @@ shared: #共享变量
     type: string
     default: "cap"
     sensitive: false
+    pattern: "^[a-zA-Z][a-zA-Z0-9_]{0,30}[a-zA-Z0-9]$"  #长度为2-255个字符，以大小字母或中文开头，可包含数字，"_"或"-"
     description: MySQL 数据库用户名
   db_password:
     title: 密码
     type: secret
     sensitive: true
+    pattern: r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=])(?:(?=.*[a-z])(?=.*[A-Z])(?=.*\d)|(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=])|(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=])|(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=]))[\w!@#$%^&*()_+\-=]{8,32}$"
     default: "AwesomeCAP_2024"
     description: MySQL 数据库密码
